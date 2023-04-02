@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { ContactForm } from './ContactForm';
 import { Filter } from './Filter';
@@ -8,100 +8,70 @@ import { Modal } from './Modal';
 import { EmergencyContent } from './EmergencyContent';
 import { Container } from './App.styled';
 
-export class App extends Component {
-  state = {
-    contacts: [],
-    filter: '',
-    showModal: false,
-  };
+export const App = () => {
+  const [contacts, setContacts] = useState(
+    JSON.parse(localStorage.getItem('contacts') ?? [])
+  );
+  const [filter, setFilter] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
-  componentDidUpdate(prevState) {
-    if (prevState.contacts !== this.state.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-    }
-  }
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
 
-  componentDidMount() {
-    const contacts = JSON.parse(localStorage.getItem('contacts'));
-
-    if (contacts) {
-      this.setState({ contacts });
-    }
-  }
-
-  handleSubmit = e => {
+  const handleSubmit = e => {
     e.preventDefault();
     const id = nanoid();
     const name = e.target.elements.name.value;
     const number = e.target.elements.number.value;
-    const item = this.state.contacts.find(
+    const item = contacts.find(
       contact => contact.name.toLowerCase() === name.toLowerCase()
     );
     if (item) {
       alert(`${name} is alredy in contacts`);
     } else {
-      this.setState(prevState => ({
-        ...prevState,
-        contacts: prevState.contacts.concat({
-          name,
-          id,
-          number,
-        }),
-      }));
+      setContacts(prevContacts => [...prevContacts, { name, id, number }]);
     }
     e.target.reset();
   };
 
-  handleDelete = id => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== id),
-    }));
+  const handleDelete = id => {
+    setContacts(prevState => prevState.filter(contact => contact.id !== id));
   };
 
-  handleChangeInput = str => {
-    this.setState(prevState => ({
-      filter: str,
-    }));
+  const handleChengeInput = str => {
+    setFilter(str);
   };
 
-  handleFiltered = () => {
-    const filterContactsList = this.state.contacts.filter(contact => {
-      return contact.name
-        .toLowerCase()
-        .includes(this.state.filter.toLowerCase());
-    });
-
-    return filterContactsList;
-  };
-
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
-  };
-
-  render() {
-    return (
-      <Container>
-        <h1>Phonebook</h1>
-        <ContactForm onSubmit={this.handleSubmit} />
-        <h2>Contacts</h2>
-        <Filter
-          filter={this.state.filter}
-          onChangeInput={this.handleChangeInput}
-        />
-        <ContactList
-          onSubmit={this.handleSubmit}
-          contacts={this.handleFiltered()}
-          onDelete={this.handleDelete}
-        />
-        <EmergencyBtn onClick={this.toggleModal} title="EMERGENCY NUMBERS!!!" />
-        {this.state.showModal && (
-          <Modal onClose={this.toggleModal}>
-            {<EmergencyContent onClose={this.toggleModal} />}
-          </Modal>
-        )}
-      </Container>
+  const handleFiltered = () => {
+    return contacts.filter(
+      contact =>
+        contact.name.toLowerCase().includes(filter.toLowerCase()) ||
+        contact.number.includes(filter)
     );
-  }
-}
+  };
+
+  const toggleModal = () => {
+    setShowModal( showModal => !showModal);
+  };
+
+  return (
+    <Container>
+      <h1>Phonebook</h1>
+      <ContactForm onSubmit={handleSubmit} />
+      <h2>Contacts</h2>
+      <Filter filter={filter} onChangeInput={handleChengeInput} />
+      <ContactList
+        onSubmit={handleSubmit}
+        contacts={handleFiltered()}
+        onDelete={handleDelete}
+      />
+      <EmergencyBtn onClick={toggleModal} title="EMERGENCY NUMBERS!!!" />
+      {showModal && (
+        <Modal onClose={toggleModal}>
+          {<EmergencyContent onClose={toggleModal} />}
+        </Modal>
+      )}
+    </Container>
+  );
+};
