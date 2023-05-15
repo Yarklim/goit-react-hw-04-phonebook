@@ -10,7 +10,7 @@ import { Container } from './App.styled';
 
 export const App = () => {
   const [contacts, setContacts] = useState(
-    JSON.parse(localStorage.getItem('contacts') ?? [])
+    JSON.parse(localStorage.getItem('contacts') )?? []
   );
   const [filter, setFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
